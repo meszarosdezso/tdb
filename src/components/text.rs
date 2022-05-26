@@ -11,7 +11,7 @@ impl Text {
 }
 
 impl Component for Text {
-    fn render(&self, parent_size: Size) {
+    fn render(&self, _parent_size: Size) {
         println!("{}", self.content);
     }
 }
