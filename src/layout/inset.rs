@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct Inset {
     pub left: u64,
     pub top: u64,

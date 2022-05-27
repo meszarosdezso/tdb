@@ -7,6 +7,10 @@ use size::Size;
 #[derive(Debug, Clone)]
 pub struct RGB(pub u8, pub u8, pub u8);
 
+impl Default for RGB {
+    fn default() -> Self { RGB(255, 255, 255) }
+}
+
 #[derive(Debug, Clone)]
 pub struct Pixel {
     content: u8,
@@ -43,10 +47,11 @@ impl Pixel {
 
         s.push(self.content as char);
 
-        print!("{s}\x1B[0m");
+        print!("{s}");
     }
 }
 
 pub trait Component {
+    fn get_size(&self) -> Size;
     fn to_buf(&self, parent_size: Size) -> Vec<Pixel>;
 }
