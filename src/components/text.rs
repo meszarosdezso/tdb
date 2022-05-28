@@ -17,16 +17,6 @@ impl Text {
     }
 }
 
-// Context { size: None }
-// => [h,e,l,l,o, ,w,o,r,l,d]
-//
-// Context { size: (5, 5) }
-// => [h,e,l,l,o,
-//      ,w,o,r,l,
-//     d, , , , ,
-//      , , , , ,
-//      , , , , ,]
-
 impl Component for Text {
     fn build(&self, context: RenderContext) -> BuiltComponent {
         let size = match context.size {
@@ -39,8 +29,6 @@ impl Component for Text {
                 Size::new(width, *height)
             }
         };
-
-        println!("Text size: {size:?}");
 
         let mut buffer = Vec::with_capacity(size.width * size.height);
         let color = self.color.clone().unwrap_or(RGB(255, 255, 255));
