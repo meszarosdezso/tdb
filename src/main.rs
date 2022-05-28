@@ -40,5 +40,8 @@ fn main() {
         pixel.render();
     }
 
-    print!("\x1B[0m");
+    println!("\x1B[0m");
+
+    let mut buf = String::new();
+    std::io::stdin().read_line(&mut buf).unwrap();
 }
