@@ -1,13 +1,13 @@
 #[derive(Clone, Debug, Default)]
 pub struct Inset {
-    pub left: u64,
-    pub top: u64,
-    pub right: u64,
-    pub bottom: u64
+    pub left: usize,
+    pub top: usize,
+    pub right: usize,
+    pub bottom: usize
 }
 
 impl Inset {
-    pub fn symmetric(horizontal: u64, vertical: u64) -> Self {
+    pub fn symmetric(horizontal: usize, vertical: usize) -> Self {
         Self {
             left: horizontal,
             top: vertical,

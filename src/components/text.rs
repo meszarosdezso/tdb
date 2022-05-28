@@ -1,4 +1,5 @@
-use super::{Component, Pixel, RGB, Size};
+use super::{Component, Size, BuiltComponent, RenderContext};
+use crate::components::pixel::{Pixel, RGB};
 
 pub struct Text {
     pub content: String,
@@ -16,41 +17,60 @@ impl Text {
     }
 }
 
+// Context { size: None }
+// => [h,e,l,l,o, ,w,o,r,l,d]
+//
+// Context { size: (5, 5) }
+// => [h,e,l,l,o,
+//      ,w,o,r,l,
+//     d, , , , ,
+//      , , , , ,
+//      , , , , ,]
+
 impl Component for Text {
+    fn build(&self, context: RenderContext) -> BuiltComponent {
+        let size = match context.size {
+            Some(size) => size,
+            None => {
+                let lines = self.content.split('\n');
+                let height = &lines.clone().count();
+                let width = lines.map(|l| l.len()).max().unwrap_or_default();
 
-    fn get_size(&self) -> Size {
-        let lines = self.content.split('\n');
-        let h = lines.clone().count();
-        let w = &lines.map(|l| l.len()).max().unwrap_or_default();
+                Size::new(width, *height)
+            }
+        };
 
-        Size::new(*w as u64, h as u64)
-    }
+        println!("Text size: {size:?}");
 
-    fn to_buf(&self, parent_size: Size) -> Vec<Pixel> {
-        let max_width = self.content.split('\n').map(|l| l.len()).max().unwrap_or_default();
-
-        let w = max_width; 
-        let h = parent_size.height as usize;
-        println!("Width: {w}, Height: {h}");
-
-        let mut buf = Vec::with_capacity((w * h) as usize);
+        let mut buffer = Vec::with_capacity(size.width * size.height);
         let color = self.color.clone().unwrap_or(RGB(255, 255, 255));
-       
+
+        let mut prev_c = ' ';
         for c in self.content.chars() {
             match c {
                 '\n' => {
-                    let rem = buf.len() % w;
-                    for _ in 0..w - rem {
-                        buf.push(Pixel::empty());
+                    let rem = buffer.len() % size.width;
+                    if rem > 0 || prev_c == '\n' {
+                        let empty_count = size.width - rem;
+
+                        for _ in 0..empty_count {
+                            buffer.push(Pixel::empty());
+                        }
                     }
                 },
                 _ => {
                     let pixel = Pixel { content: c as u8, color: Some(color.clone()), background_color: None };
-                    buf.push(pixel);
+                    buffer.push(pixel);
                 }
             };
+            prev_c = c;
         }
 
-        buf
+        let free = buffer.capacity() - buffer.len();
+        for _ in 0..free {
+            buffer.push(Pixel::empty());
+        }
+
+        BuiltComponent { buffer, size }
     }
 }

@@ -1,10 +1,11 @@
 use super::*;
 use crate::Inset;
 use crate::Border;
+use pixel::{Pixel, RGB};
 
 pub struct Container {
-    width: Option<u64>,
-    height: Option<u64>,
+    width: Option<usize>,
+    height: Option<usize>,
     content: Option<Box<dyn Component>>,
     padding: Option<Inset>,
     color: Option<RGB>,
@@ -12,7 +13,7 @@ pub struct Container {
 }
 
 impl Container {
-    pub fn from_size(width: u64, height: u64) -> Self {
+    pub fn from_size(width: usize, height: usize) -> Self {
         Self {
             content: None, 
             width: Some(width),
@@ -45,13 +46,7 @@ impl Container {
 }
 
 impl Component for Container {
-    fn get_size(&self) -> Size {
-        let w = self.width.unwrap_or(0);
-        let h = self.height.unwrap_or(0);
-        Size::new(w, h)
-    }
-
-    fn to_buf(&self, _parent_size: Size) -> Vec<Pixel> {
+    fn build(&self, _context: RenderContext) -> BuiltComponent {
         let padding = &self.padding.clone().unwrap_or_default();
         
         let pl = padding.left;
@@ -59,44 +54,50 @@ impl Component for Container {
         let pr = padding.right;
         let pb = padding.bottom;
 
-        let content_size = if let Some(content) = &self.content { content.get_size() } else { Size::zero() };
+        let content = match &self.content {
+            Some(content) => {
+                let ctx = RenderContext { size: None };
+                content.build(ctx)
+            },
+            None => BuiltComponent { buffer: vec![], size: Size::zero() }
+        };
 
-        let h = self.height.unwrap_or(content_size.height + pt + pb); 
-        let w = self.width.unwrap_or(content_size.width + pl + pr); 
+        let w = self.width.unwrap_or(content.size.width + pl + pr); 
+        let h = self.height.unwrap_or(content.size.height + pt + pb); 
 
         let def = Pixel { content: 32, color: None, background_color: self.color.clone() };
 
-        let mut buf = vec![def; (w * h) as usize];
+        let mut buf = vec![def; w * h];
 
         if let Some(border) = &self.border {
             let pixel = Pixel { content: 32, background_color: Some(border.color.clone()), color: None };
             for x in 1..w - 1 {
-                *buf.get_mut(x as usize).unwrap() = pixel.clone();
+                *buf.get_mut(x).unwrap() = pixel.clone();
                 let idx = buf.len() - x as usize - 1;
                 *buf.get_mut(idx).unwrap() = pixel.clone();
             }
 
             for y in 0..h {
-                *buf.get_mut((y * w) as usize).unwrap() = pixel.clone();
-                *buf.get_mut(((y * w) + 1) as usize).unwrap() = pixel.clone();
-                *buf.get_mut((y * w + (w - 1)) as usize).unwrap() = pixel.clone();
-                *buf.get_mut((y * w + (w - 2)) as usize).unwrap() = pixel.clone();
+                *buf.get_mut(y * w).unwrap() = pixel.clone();
+                *buf.get_mut(y * w + 1).unwrap() = pixel.clone();
+                *buf.get_mut(y * w + (w - 1)).unwrap() = pixel.clone();
+                *buf.get_mut(y * w + (w - 2)).unwrap() = pixel.clone();
             }
         }
 
-        if let Some(content) = &self.content {
-            let content_buf = content.to_buf(Size::new(w - pl - pr, h - pt - pb));
+        for y in 0..content.size.height {
+            for x in 0..content.size.width {
+                let index = y * content.size.width + x;
+                let pixel = content.buffer.get(index).unwrap().clone();
 
-            for y in 0..content_size.height {
-                for x in 0..content_size.width {
-                    let index = (y * content_size.width + x) as usize;
-                    let pixel = content_buf.get(index).unwrap().clone();
-
-                    let index = ((y + pt) * w + (x + pl)) as usize;
-                    *buf.get_mut(index).unwrap() = pixel;
-                }
+                let index = (y + pt) * w + (x + pl);
+                *buf.get_mut(index).unwrap() = pixel;
             }
         }
-        buf
+
+        BuiltComponent { 
+            buffer: buf,
+            size: Size::new(w, h)
+        }
     }
 }

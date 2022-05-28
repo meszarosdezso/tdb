@@ -1,11 +1,11 @@
 #[derive(Debug)]
 pub struct Size {
-    pub width: u64,
-    pub height: u64,
+    pub width: usize,
+    pub height: usize,
 }
 
 impl Size {
-    pub fn new(width: u64, height: u64) -> Self {
+    pub fn new(width: usize, height: usize) -> Self {
         Self { width, height }
     }
 

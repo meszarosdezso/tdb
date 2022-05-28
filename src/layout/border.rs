@@ -1,4 +1,4 @@
-use crate::RGB;
+use crate::components::pixel::RGB;
 
 pub enum BorderStyle {
     FULL,
