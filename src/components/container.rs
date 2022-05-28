@@ -13,6 +13,17 @@ pub struct Container {
 }
 
 impl Container {
+    pub fn new() -> Self {
+        Self {
+            content: None,
+            width: None,
+            height: None,
+            padding: None,
+            color: None,
+            border: None,
+        }
+    }
+
     pub fn from_size(width: usize, height: usize) -> Self {
         Self {
             content: None, 
@@ -46,7 +57,7 @@ impl Container {
 }
 
 impl Component for Container {
-    fn build(&self, _context: RenderContext) -> BuiltComponent {
+    fn build(&self, context: RenderContext) -> BuiltComponent {
         let padding = &self.padding.clone().unwrap_or_default();
         
         let pl = padding.left;
@@ -56,7 +67,12 @@ impl Component for Container {
 
         let content = match &self.content {
             Some(content) => {
-                let ctx = RenderContext { size: None };
+                let size = match self.width {
+                    Some(w) => Some(Size::new(w - pl - pr, self.height.unwrap() - pt - pb)),
+                    None => context.size.clone(),
+                };
+
+                let ctx = RenderContext { size };
                 content.build(ctx)
             },
             None => BuiltComponent { buffer: vec![], size: Size::zero() }
@@ -67,21 +83,21 @@ impl Component for Container {
 
         let def = Pixel { content: 32, color: None, background_color: self.color.clone() };
 
-        let mut buf = vec![def; w * h];
+        let mut buffer = vec![def; w * h];
 
         if let Some(border) = &self.border {
             let pixel = Pixel { content: 32, background_color: Some(border.color.clone()), color: None };
             for x in 1..w - 1 {
-                *buf.get_mut(x).unwrap() = pixel.clone();
-                let idx = buf.len() - x as usize - 1;
-                *buf.get_mut(idx).unwrap() = pixel.clone();
+                *buffer.get_mut(x).unwrap() = pixel.clone();
+                let idx = buffer.len() - x as usize - 1;
+                *buffer.get_mut(idx).unwrap() = pixel.clone();
             }
 
             for y in 0..h {
-                *buf.get_mut(y * w).unwrap() = pixel.clone();
-                *buf.get_mut(y * w + 1).unwrap() = pixel.clone();
-                *buf.get_mut(y * w + (w - 1)).unwrap() = pixel.clone();
-                *buf.get_mut(y * w + (w - 2)).unwrap() = pixel.clone();
+                *buffer.get_mut(y * w).unwrap() = pixel.clone();
+                *buffer.get_mut(y * w + 1).unwrap() = pixel.clone();
+                *buffer.get_mut(y * w + (w - 1)).unwrap() = pixel.clone();
+                *buffer.get_mut(y * w + (w - 2)).unwrap() = pixel.clone();
             }
         }
 
@@ -91,12 +107,12 @@ impl Component for Container {
                 let pixel = content.buffer.get(index).unwrap().clone();
 
                 let index = (y + pt) * w + (x + pl);
-                *buf.get_mut(index).unwrap() = pixel;
+                *buffer.get_mut(index).expect(&format!("Pixel {index} not found")) = pixel;
             }
         }
 
         BuiltComponent { 
-            buffer: buf,
+            buffer,
             size: Size::new(w, h)
         }
     }

@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Clone, Default, Debug)]
 pub struct Size {
     pub width: usize,
     pub height: usize,
